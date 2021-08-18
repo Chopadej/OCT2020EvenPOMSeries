@@ -1,50 +1,52 @@
-pipeline{
-    agent any
+pipeline { 
+agent any 
     
-    stages{
+    stages { 
         
-        stage("Build"){
-            
+        stage ('Build') { 
             steps{
-                echo("Building")
+                echo "Building"
             }
         }
-        stage("Deploy DEV"){
-            
-            steps{
-                echo("Dev deployment")
+        
+        stage('Test') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    bat "mvn clean install"
+                }
             }
         }
-        stage("Deploy QA"){
-            
-            steps{
-                echo("QA Deployment")
+                
+     
+        stage('Publish Allure Reports') {
+           steps {
+                script {
+                    allure([
+                        includeProperties: false,
+                        jdk: '',
+                        properties: [],
+                        reportBuildPolicy: 'ALWAYS',
+                        results: [[path: '/allure-results']]
+                    ])
+                }
             }
         }
-        stage("Regression Test"){
-            
+        
+        
+        stage('Publish Extent Report'){
             steps{
-                echo("Run Test Automation")
+                     publishHTML([allowMissing: false,
+                                  alwaysLinkToLastBuild: false, 
+                                  keepAll: false, 
+                                  reportDir: 'build', 
+                                  reportFiles: 'TestExecutionReport.html', 
+                                  reportName: 'HTML Extent Report', 
+                                  reportTitles: ''])
             }
         }
-        stage("Deploy on Stage"){
-            
-            steps{
-                echo("Stage Deployment ")
-            }
-        }
-        stage("Sanity Test"){
-            
-            steps{
-                echo("Sanity test on stage environment")
-            }
-        }
-        stage("Prod deployment"){
-            
-            steps{
-                echo("Deployment in prod")
-            }
-        }
+        
+        
+        
     }
 
-}
+ }
